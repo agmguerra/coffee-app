@@ -26,8 +26,54 @@ func (c *Coffee) GetAllCoffees() ([]*Coffee, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	var coffees []*Coffee
 	for rows.Next() {
-
+		var coffee Coffee
+		err := rows.Scan(
+			coffee.ID,
+			coffee.Name,
+			coffee.Image,
+			coffee.Roast,
+			coffee.Region,
+			coffee.Price,
+			coffee.GrindUnit,
+			coffee.CreatedAt,
+			coffee.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		coffees = append(coffees, &coffee)
 	}
+	return coffees, nil
+}
+
+func (c *Coffee) CreateCoffee(coffee Coffee) (*Coffee, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+
+	query := `
+		INSERT INTO coffees (name, image, region, roast, price, grind_unit, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, %6, $7, $8) RETURN *
+	`
+	// CHECK(ctx, query
+	_, err := db.ExecContext(
+		ctx,
+		query,
+		coffee.ID,
+		coffee.Name,
+		coffee.Image,
+		coffee.Region,
+		coffee.Roast,
+		coffee.Price,
+		coffee.GrindUnit,
+		time.Now(),
+		time.Now(),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &coffee, nil
 }
